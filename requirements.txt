@@ -1,0 +1,7 @@
+pandas
+sidrapy
+pendulum
+requests
+pyarrow
+boto3
+python-dotenv
