@@ -5,8 +5,14 @@ Substitui a lógica do Airflow. Executa sequencialmente todos os módulos de
 extração (ETLs) do IPCA e metas de inflação.
 """
 import logging
+import os
+import sys
 import traceback
 from datetime import datetime
+
+# Garante que os módulos ETL em src/ sejam encontrados,
+# independentemente do diretório de onde o script é executado.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Importa os módulos ETL locais
 import ipca_serie_historica
