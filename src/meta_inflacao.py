@@ -44,21 +44,25 @@ def _extrair(cfg: dict) -> pd.DataFrame:
             resp = requests.get(url, timeout=60)
             resp.raise_for_status()
             dados = resp.json()
-            
+
             if not dados:
                 raise ValueError("API retornou resposta vazia.")
-                
+
             df = pd.DataFrame(dados)
             df["ano"] = pd.to_datetime(df["data"], format="%d/%m/%Y").dt.year
             df["meta"] = pd.to_numeric(df["valor"], errors="coerce")
             return df[["ano", "meta"]]
-            
-        except requests.exceptions.RequestException as e:
+
+        except (requests.exceptions.RequestException, ValueError) as e:
             logger.warning("Falha (tentativa %d/%d): %s", tentativa, cfg["tentativas"], e)
             if tentativa < cfg["tentativas"]:
                 time.sleep(cfg["espera_seg"])
             else:
                 raise
+
+    # Salvaguarda: o loop sempre retorna ou levanta exceção acima,
+    # mas garantimos que a função nunca devolva None silenciosamente.
+    raise RuntimeError("Extração da meta de inflação falhou sem exceção explícita.")
 
 
 def _transformar(df: pd.DataFrame) -> pd.DataFrame:
