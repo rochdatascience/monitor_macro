@@ -8,9 +8,11 @@ O pipeline foi projetado para extrair dados de fontes governamentais abertas, pr
 
 ```mermaid
 graph LR
-    A[APIs Públicas<br>(IBGE e BCB)] -->|Python| B(Processamento e Transformação)
-    B -->|Arquivos .parquet| C[Armazenamento de Objetos<br>(MinIO / S3)]
-    C -->|Importação| D[Visualização<br>(Power BI / Dashboards)]
+    A["APIs Públicas<br>(IBGE e BCB)"] -->|Python| B("Processamento e Transformação")
+    B -->|Arquivos .parquet| C["Armazenamento de Objetos<br>(MinIO / S3)"]
+    B -->|pandas.to_sql| E[("PostgreSQL")]
+    C -->|Importação| D["Visualização<br>(Power BI / Dashboards)"]
+    E -->|SQL| D
 ```
 
 ### Componentes Principais
