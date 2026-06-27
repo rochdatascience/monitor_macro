@@ -21,11 +21,21 @@ if [ $? -eq 0 ]; then
     echo "ETL finalizado com sucesso. Iniciando upload para o MinIO..."
     # Executa o script de upload para o MinIO
     python3 src/upload_minio.py
-    
+
     if [ $? -eq 0 ]; then
-        echo "Upload concluído com sucesso!"
+        echo "Upload para o MinIO concluído com sucesso!"
     else
         echo "Erro durante o upload para o MinIO."
+    fi
+
+    echo "Iniciando carga das tabelas no PostgreSQL..."
+    # Executa o script de carga para o PostgreSQL
+    python3 src/upload_postgres.py
+
+    if [ $? -eq 0 ]; then
+        echo "Carga no PostgreSQL concluída com sucesso!"
+    else
+        echo "Erro durante a carga no PostgreSQL."
     fi
 else
     echo "Erro durante a execução do orquestrador. Upload cancelado."
