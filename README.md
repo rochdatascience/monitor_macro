@@ -24,6 +24,7 @@ graph LR
 - **Armazenamento**:
   - Dados salvos em arquivos `.parquet`, garantindo compressão eficiente e preservação de tipos de dados.
   - Upload automatizado para bucket via `boto3`.
+  - Carga das tabelas no **PostgreSQL** via `SQLAlchemy` / `pandas.to_sql` (full refresh).
 
 ## 📁 Estrutura do Projeto
 
@@ -39,7 +40,8 @@ graph LR
     ├── ipca_serie_historica.py
     ├── meta_inflacao.py
     ├── orquestrador.py     # Script principal para execução do ETL
-    └── upload_minio.py     # Módulo para envio de arquivos ao MinIO (S3)
+    ├── upload_minio.py     # Módulo para envio de arquivos ao MinIO (S3)
+    └── upload_postgres.py  # Módulo para carga das tabelas no PostgreSQL
 ```
 
 ## 🚀 Como Executar
@@ -48,6 +50,7 @@ graph LR
 
 - Python 3.8+
 - Instância MinIO ou bucket AWS S3 configurado.
+- Instância PostgreSQL acessível (ex: container Docker).
 
 ### 1. Configuração do Ambiente
 
@@ -64,6 +67,13 @@ MINIO_ENDPOINT=http://seu-ip-ou-dominio:9000
 MINIO_ACCESS_KEY=sua_access_key
 MINIO_SECRET_KEY=sua_secret_key
 MINIO_BUCKET_NAME=nome-do-bucket
+
+PG_HOST=seu-ip-ou-dominio
+PG_PORT=5432
+PG_DATABASE=postgres
+PG_USER=postgres
+PG_PASSWORD=sua_senha
+PG_SCHEMA=public
 ```
 
 ### 2. Execução do ETL
@@ -80,6 +90,14 @@ Após a execução do orquestrador, envie os arquivos processados para o bucket 
 
 ```bash
 python src/upload_minio.py
+```
+
+### 4. Carga no PostgreSQL
+
+Para carregar os arquivos `.parquet` processados em tabelas do PostgreSQL (cada arquivo vira uma tabela, com full refresh a cada execução):
+
+```bash
+python src/upload_postgres.py
 ```
 
 ## 🛠️ Padrões de Desenvolvimento
