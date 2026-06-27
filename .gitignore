@@ -1,0 +1,14 @@
+# Ambiente
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Dados processados localmente (camada temporária do ETL)
+dados_processados/
+*.parquet
+
+# Logs
+*.log
+log.txt
