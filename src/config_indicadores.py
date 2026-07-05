@@ -18,6 +18,7 @@ INDICADORES = [
     {"id": 4,  "nome": "Ibovespa",            "categoria": "Brasil",       "unidade": "pontos",        "fonte": "YAHOO", "codigo": "^BVSP"},
 
     # --------------- Cenário Internacional ---------------
+    # id 5 foi aposentado (indicador removido) — NÃO reutilizar.
     {"id": 6,  "nome": "DXY (Dollar Index)",  "categoria": "Global",       "unidade": "índice",        "fonte": "YAHOO", "codigo": "DX-Y.NYB"},
     {"id": 7,  "nome": "Treasury 10 anos",    "categoria": "Global",       "unidade": "% a.a.",        "fonte": "YAHOO", "codigo": "^TNX"},
     {"id": 8,  "nome": "S&P 500",             "categoria": "Global",       "unidade": "pontos",        "fonte": "YAHOO", "codigo": "^GSPC"},

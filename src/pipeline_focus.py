@@ -2,15 +2,21 @@
 Pipeline especialista — Boletim Focus (BCB / API Olinda Expectativas).
 
 Captura a SÉRIE histórica da mediana das expectativas de mercado anuais
-(ano-referência corrente) para IPCA, PIB Total, Câmbio e Selic — uma observação
-por data de coleta do Focus dentro da janela configurada (ETL_DIAS_HISTORICO).
-A data do fato é a data da coleta Focus.
+para IPCA, PIB Total, Câmbio e Selic — uma observação por data de coleta do
+Focus dentro da janela configurada (ETL_DIAS_HISTORICO). A data do fato é a
+data da coleta Focus.
+
+Semântica "ano corrente": cada coleta usa como ano-referência o ano-calendário
+DA PRÓPRIA COLETA (coletas de 2026 -> expectativa para 2026; coletas de 2027 ->
+2027). Assim, uma janela que cruza a virada do ano extrai cada trecho com o
+ano-referência correto e a recarga nunca sobrescreve o histórico do ano
+anterior com referência errada.
 
 Doc: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/aplicacao
 """
 import logging
 import time
-from datetime import datetime
+from datetime import date
 from urllib.parse import quote
 
 import pandas as pd
@@ -32,19 +38,20 @@ DEFAULT_CONFIG = {
 }
 
 
-def _montar_url(nome_indicador: str, ano: int, dt_ini, cfg) -> str:
+def _montar_url(nome_indicador: str, ano: int, dt_ini, dt_fim, cfg) -> str:
     """
     Monta a URL OData. O serviço Olinda exige o '$' LITERAL nos parâmetros
     ($top, $filter...). O requests encodaria como %24 e a API retornaria 400,
     por isso construímos a query string manualmente.
 
     Traz a SÉRIE histórica: todas as coletas (base 30 dias) do ano-referência
-    a partir de dt_ini, ordenadas por data.
+    dentro de [dt_ini, dt_fim], ordenadas por data.
     """
     filtro = (
         f"Indicador eq '{nome_indicador}' "
         f"and DataReferencia eq '{ano}' and baseCalculo eq 0 "
-        f"and Data ge '{dt_ini.strftime('%Y-%m-%d')}'"
+        f"and Data ge '{dt_ini.strftime('%Y-%m-%d')}' "
+        f"and Data le '{dt_fim.strftime('%Y-%m-%d')}'"
     )
     query = (
         "$top=10000&$format=json&$orderby=Data"
@@ -54,9 +61,9 @@ def _montar_url(nome_indicador: str, ano: int, dt_ini, cfg) -> str:
     return cfg["url_base"] + "?" + quote(query, safe="$&=,'")
 
 
-def _extrair_indicador(nome_indicador: str, ano: int, dt_ini, cfg) -> pd.DataFrame:
+def _extrair_indicador(nome_indicador: str, ano: int, dt_ini, dt_fim, cfg) -> pd.DataFrame:
     """Série histórica das medianas (base 30 dias) no ano-referência informado."""
-    url = _montar_url(nome_indicador, ano, dt_ini, cfg)
+    url = _montar_url(nome_indicador, ano, dt_ini, dt_fim, cfg)
     ultimo_erro = None
     for tentativa in range(1, cfg["tentativas"] + 1):
         try:
@@ -82,18 +89,28 @@ def _transformar(bruto: pd.DataFrame, indicador_id: int) -> pd.DataFrame:
 
 def executar(params=None) -> pd.DataFrame:
     cfg = {**DEFAULT_CONFIG, **(params or {})}
-    ano = datetime.now().year
-    dt_ini, _ = janela_datas()
+    dt_ini, dt_fim = janela_datas()
+    anos = list(range(dt_ini.year, dt_fim.year + 1))
     indicadores = por_fonte("FOCUS")
-    logger.info("Iniciando extração Focus (%d indicadores, ano=%d)...", len(indicadores), ano)
+    logger.info(
+        "Iniciando extração Focus (%d indicadores, anos-referência=%s)...",
+        len(indicadores), anos,
+    )
 
     partes = []
     for ind in indicadores:
-        bruto = _extrair_indicador(ind["codigo"], ano, dt_ini, cfg)
-        df = _transformar(bruto, ind["id"])
-        logger.info("  %-30s -> %d obs", ind["nome"], len(df))
-        partes.append(df)
-        time.sleep(0.3)
+        total = 0
+        # Um request por ano-calendário coberto pela janela, cada um com o
+        # ano-referência corrente daquele trecho.
+        for ano in anos:
+            ini = max(dt_ini, date(ano, 1, 1))
+            fim = min(dt_fim, date(ano, 12, 31))
+            bruto = _extrair_indicador(ind["codigo"], ano, ini, fim, cfg)
+            df = _transformar(bruto, ind["id"])
+            total += len(df)
+            partes.append(df)
+            time.sleep(0.3)
+        logger.info("  %-30s -> %d obs", ind["nome"], total)
 
     fato = padronizar_fato(pd.concat(partes, ignore_index=True))
     salvar_parquet(fato, cfg["output_filename"])

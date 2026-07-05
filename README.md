@@ -24,7 +24,9 @@ APIs Públicas  ->  Python ETL  ->  parquet (local)  ->  PostgreSQL  ->  Power B
 > Soja/Milho/Trigo do Yahoo vêm em centavos/bushel; o ETL converte para
 > **US$/bushel** (`fator: 0.01`) automaticamente.
 > O Focus traz a **série histórica** das medianas (uma por data de coleta) dentro
-> da janela `ETL_DIAS_HISTORICO`, não apenas o último valor.
+> da janela `ETL_DIAS_HISTORICO`, não apenas o último valor. O ano-referência de
+> cada coleta é o **ano da própria coleta** (coletas de 2026 → expectativa para
+> 2026), então janelas que cruzam a virada do ano permanecem consistentes.
 
 ## Estrutura
 

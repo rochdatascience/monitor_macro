@@ -5,7 +5,8 @@ Indicadores: Ibovespa, DXY, Treasury 10a, S&P 500, Nasdaq, Brent, WTI,
 Soja, Milho, Trigo e Minério de Ferro.
 
 Endpoint: https://query1.finance.yahoo.com/v8/finance/chart/{symbol}
-Retorna fechamento diário ajustado. Símbolos com falha são apenas avisados
+Retorna o fechamento diário (campo `close`, não ajustado por dividendos —
+irrelevante para índices e futuros). Símbolos com falha são apenas avisados
 (ex.: TIO=F pode ficar indisponível) e não derrubam o pipeline inteiro.
 """
 import logging
@@ -98,6 +99,12 @@ def executar(params=None) -> pd.DataFrame:
         except Exception as e:  # noqa: BLE001
             logger.error("  %-22s FALHOU e foi ignorado: %s", ind["nome"], e)
         time.sleep(0.3)
+
+    if not partes:
+        raise RuntimeError(
+            "Nenhum símbolo Yahoo retornou dados (todos falharam); "
+            "verifique conectividade/bloqueio da API."
+        )
 
     fato = padronizar_fato(pd.concat(partes, ignore_index=True))
     salvar_parquet(fato, cfg["output_filename"])

@@ -10,7 +10,6 @@ import logging
 from pathlib import Path
 
 import pandas as pd
-from sqlalchemy import text
 
 from config_indicadores import INDICADORES
 from utils import get_engine, output_dir, schema
@@ -28,9 +27,10 @@ MESES_PT = [
 def _criar_schema(engine):
     """Executa o DDL idempotente que cria schema, dimensões e fato."""
     ddl = DDL_PATH.read_text(encoding="utf-8")
+    # Script inteiro numa única chamada: o psycopg2 aceita múltiplos statements
+    # e isso não quebra se o DDL ganhar functions/triggers com ';' interno.
     with engine.begin() as conn:
-        for stmt in [s.strip() for s in ddl.split(";") if s.strip()]:
-            conn.execute(text(stmt))
+        conn.exec_driver_sql(ddl)
     logger.info("Schema/tabelas garantidos (%s).", schema())
 
 
