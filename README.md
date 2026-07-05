@@ -1,7 +1,7 @@
 # Painel Macroeconômico — ETL
 
-Pipeline de ingestão diária de indicadores macroeconômicos para um painel de
-diretoria (foco em agronegócio). Segue o template **ETL Minimalista em
+Pipeline de ingestão diária de indicadores macroeconômicos para um painel
+executivo (com foco em agronegócio). Segue o template **ETL Minimalista em
 Python**: sem orquestradores pesados, formato `parquet` na camada local e carga
 em **PostgreSQL** (modelo estrela) para consumo no Power BI.
 
